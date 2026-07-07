@@ -1,0 +1,158 @@
+/* ══ HISTORIAL ════════════════════════════════════════════════════════════ */
+.historial-wrap {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 36px 20px 64px;
+}
+.historial-wrap h1 { font-size: 1.9rem; margin-bottom: 6px; }
+.historial-sub     { color: var(--gris); margin-bottom: 28px; font-size: 0.92rem; }
+
+/* ── Filtros ── */
+.hist-filtros {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+/* ── Tarjeta pedido ── */
+.hist-card {
+  background: var(--blanco);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: box-shadow var(--trans);
+}
+.hist-card:hover { box-shadow: 0 6px 24px rgba(59,26,10,.12); }
+
+.hist-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--crema-dark);
+  flex-wrap: wrap;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.hist-card-top:hover { background: var(--crema); }
+
+.hist-panaderia {
+  font-weight: 700;
+  font-size: 1rem;
+}
+.hist-fecha {
+  font-size: 0.8rem;
+  color: var(--gris);
+  margin-top: 2px;
+}
+.hist-ticket {
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  color: var(--marron-mid);
+  margin-top: 2px;
+}
+.hist-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.hist-total {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--verde);
+  font-family: 'Playfair Display', serif;
+}
+.hist-chevron {
+  font-size: 0.9rem;
+  color: var(--gris);
+  transition: transform 0.22s ease;
+}
+.hist-card.open .hist-chevron { transform: rotate(180deg); }
+
+/* ── Detalle expandible ── */
+.hist-detalle {
+  display: none;
+  padding: 16px 20px;
+  border-top: 1px solid var(--crema-dark);
+  background: var(--crema);
+}
+.hist-card.open .hist-detalle { display: block; }
+
+.hist-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--crema-dark);
+  font-size: 0.88rem;
+  gap: 8px;
+}
+.hist-item:last-of-type { border-bottom: none; }
+.hist-item-nombre { color: var(--marron-mid); }
+.hist-item-precio { font-weight: 700; white-space: nowrap; }
+
+.hist-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  font-size: 0.82rem;
+  color: var(--gris);
+}
+.hist-meta span { display: flex; align-items: center; gap: 4px; }
+
+/* ── Calificación ── */
+.rating-wrap {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--crema-dark);
+}
+.rating-wrap p {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--marron);
+  margin-bottom: 8px;
+}
+.estrellas {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.estrella {
+  font-size: 1.6rem;
+  cursor: pointer;
+  transition: transform 0.1s;
+  user-select: none;
+  line-height: 1;
+}
+.estrella:hover,
+.estrella.on { transform: scale(1.15); }
+.rating-enviada {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--gris);
+}
+.rating-enviada .estrellas-static { color: var(--naranja); letter-spacing: 1px; }
+
+/* ══ ESTADO VACÍO ═════════════════════════════════════════════════════════ */
+.hist-empty {
+  text-align: center;
+  padding: 72px 20px;
+  color: var(--gris);
+}
+.hist-empty-ico { font-size: 4rem; display: block; margin-bottom: 16px; }
+.hist-empty h2  { color: var(--marron); margin-bottom: 6px; }
+
+/* ══ RESPONSIVE ═══════════════════════════════════════════════════════════ */
+@media (max-width: 540px) {
+  .historial-wrap { padding: 24px 14px 48px; }
+  .hist-card-top  { padding: 14px 16px; }
+  .hist-detalle   { padding: 14px 16px; }
+  .hist-total     { font-size: 0.95rem; }
+}
