@@ -180,6 +180,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $seccion = 'trabajadores';
   }
 
+  /* ── Solicitar admin para trabajador ──────────────────────────────── */
+  if ($accion === 'solicitar_admin') {
+    $trab_id = (int)($_POST['trab_id'] ?? 0);
+    if ($trab_id) {
+      $chk = db()->prepare("SELECT id FROM usuarios WHERE id=? AND tipo='trabajador' AND panaderia_id=?");
+      $chk->execute([$trab_id, $uid]);
+      if ($chk->fetch()) {
+        $existe = db()->prepare("SELECT id, estado FROM solicitudes_admin WHERE trabajador_id=? AND vendedor_id=?");
+        $existe->execute([$trab_id, $uid]);
+        $sol = $existe->fetch();
+        if ($sol) {
+          $msg_err = $sol['estado'] === 'pendiente'
+            ? 'Ya hay una solicitud pendiente para este trabajador.'
+            : 'Este trabajador ya tiene admin aprobado.';
+        } else {
+          db()->prepare("INSERT INTO solicitudes_admin (trabajador_id, vendedor_id) VALUES (?,?)")
+            ->execute([$trab_id, $uid]);
+          $msg_ok = '¡Solicitud enviada al administrador! Revisará en breve 📨';
+        }
+      }
+    }
+    $seccion = 'trabajadores';
+  }
+
   /* ── Crear sucursal ───────────────────────────────────────────────── */
   if ($accion === 'crear_sucursal') {
     $nom_suc = trim($_POST['nombre']    ?? '');
@@ -310,6 +334,14 @@ $trabajadores = db()->query("
     WHERE tipo = 'trabajador' AND panaderia_id = $uid
     ORDER BY nombre
 ")->fetchAll();
+
+// Estado de solicitudes por trabajador
+$solicitudes_map = [];
+if (!empty($trabajadores)) {
+  $tids = implode(',', array_map('intval', array_column($trabajadores, 'id')));
+  $sols = db()->query("SELECT * FROM solicitudes_admin WHERE trabajador_id IN ($tids)")->fetchAll();
+  foreach ($sols as $s) $solicitudes_map[$s['trabajador_id']] = $s;
+}
 
 // ── Sucursales de esta panadería ──────────────────────────────────────────
 $mis_sucursales = [];
@@ -868,15 +900,17 @@ try {
           <?php else: ?>
             <div style="display:grid;gap:12px">
               <?php foreach ($trabajadores as $t): ?>
+                <?php $sol = $solicitudes_map[$t['id']] ?? null; ?>
                 <div style="display:flex;align-items:center;gap:14px;padding:14px;background:var(--crema);border-radius:var(--radio)">
                   <?php if (!empty($t['avatar_url'])): ?>
                     <img src="<?= h($t['avatar_url']) ?>" style="width:44px;height:44px;border-radius:50%;object-fit:cover" alt="">
                   <?php else: ?>
                     <div style="width:44px;height:44px;border-radius:50%;background:var(--naranja);color:white;
-                            display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem">
+                    display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem">
                       <?= strtoupper(mb_substr($t['nombre'], 0, 1)) ?>
                     </div>
                   <?php endif; ?>
+
                   <div style="flex:1">
                     <p style="font-weight:700;margin:0 0 2px"><?= h($t['nombre']) ?></p>
                     <p style="color:var(--gris);font-size:0.82rem;margin:0">
@@ -884,12 +918,44 @@ try {
                       <?= h($t['email']) ?>
                       <?= !empty($t['documento_id']) ? ' · DNI: ' . h($t['documento_id']) : '' ?>
                     </p>
+                    <?php if ($sol): ?>
+                      <?php
+                      $badge_color = match ($sol['estado']) {
+                        'pendiente'  => '#FFF8E1; color:#F57F17',
+                        'aprobado'   => '#E8F5E9; color:#2E7D32',
+                        'rechazado'  => '#FFEBEE; color:#C62828',
+                      };
+                      $badge_txt = match ($sol['estado']) {
+                        'pendiente'  => '⏳ Solicitud pendiente',
+                        'aprobado'   => '✅ Admin aprobado',
+                        'rechazado'  => '❌ Solicitud rechazada',
+                      };
+                      ?>
+                      <span style="display:inline-block;margin-top:4px;padding:2px 10px;border-radius:50px;
+                             font-size:0.75rem;font-weight:700;background:<?= $badge_color ?>">
+                        <?= $badge_txt ?>
+                      </span>
+                    <?php endif; ?>
                   </div>
-                  <form method="POST" onsubmit="return confirm('¿Eliminar este trabajador?')">
-                    <input type="hidden" name="accion" value="eliminar_trabajador">
-                    <input type="hidden" name="trab_id" value="<?= $t['id'] ?>">
-                    <button class="btn btn-sm" style="background:#FFEBEE;color:#C62828;border:none;font-weight:700">🗑️</button>
-                  </form>
+
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <?php if (!$sol || $sol['estado'] === 'rechazado'): ?>
+                      <form method="POST">
+                        <input type="hidden" name="accion" value="solicitar_admin">
+                        <input type="hidden" name="trab_id" value="<?= $t['id'] ?>">
+                        <button class="btn btn-sm" style="background:#E8F5E9;color:#2E7D32;border:none;font-weight:700"
+                          title="Solicitar que sea admin de la panadería">
+                          👑 Pedir admin
+                        </button>
+                      </form>
+                    <?php endif; ?>
+
+                    <form method="POST" onsubmit="return confirm('¿Eliminar este trabajador?')">
+                      <input type="hidden" name="accion" value="eliminar_trabajador">
+                      <input type="hidden" name="trab_id" value="<?= $t['id'] ?>">
+                      <button class="btn btn-sm" style="background:#FFEBEE;color:#C62828;border:none;font-weight:700">🗑️</button>
+                    </form>
+                  </div>
                 </div>
               <?php endforeach; ?>
             </div>

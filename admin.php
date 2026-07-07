@@ -128,6 +128,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       echo json_encode(['ok' => true, 'msg' => 'Contraseña reseteada ✅']);
       break;
 
+    case 'aprobar_admin_pan':
+      $sol_id = (int)($_POST['sol_id'] ?? 0);
+      $stmt = db()->prepare("SELECT * FROM solicitudes_admin WHERE id=?");
+      $stmt->execute([$sol_id]);
+      $sol = $stmt->fetch();
+      if ($sol) {
+        db()->prepare("UPDATE solicitudes_admin SET estado='aprobado' WHERE id=?")->execute([$sol_id]);
+        db()->prepare("UPDATE usuarios SET is_admin_pan=1 WHERE id=?")->execute([$sol['trabajador_id']]);
+        echo json_encode(['ok' => true, 'msg' => '✅ Admin de panadería aprobado']);
+      } else {
+        echo json_encode(['ok' => false, 'msg' => 'Solicitud no encontrada']);
+      }
+      break;
+
+    case 'rechazar_admin_pan':
+      $sol_id = (int)($_POST['sol_id'] ?? 0);
+      $stmt2 = db()->prepare("SELECT * FROM solicitudes_admin WHERE id=?");
+      $stmt2->execute([$sol_id]);
+      $sol2 = $stmt2->fetch();
+      if ($sol2) {
+        db()->prepare("UPDATE solicitudes_admin SET estado='rechazado' WHERE id=?")->execute([$sol_id]);
+        db()->prepare("UPDATE usuarios SET is_admin_pan=0 WHERE id=?")->execute([$sol2['trabajador_id']]);
+        echo json_encode(['ok' => true, 'msg' => '❌ Solicitud rechazada']);
+      } else {
+        echo json_encode(['ok' => false, 'msg' => 'Solicitud no encontrada']);
+      }
+      break;
+
     default:
       echo json_encode(['ok' => false, 'msg' => 'Acción desconocida']);
   }
@@ -144,6 +172,19 @@ $vendedores = db()->query("
     FROM usuarios WHERE tipo='vendedor'
     ORDER BY FIELD(estado_verificacion,'pendiente','sin_enviar','rechazado','aprobado'), created_at DESC
 ")->fetchAll();
+
+// Solicitudes de admin pendientes
+$solicitudes_admin = db()->query("
+    SELECT sa.*,
+           t.nombre AS trab_nombre, t.email AS trab_email,
+           t.documento_id,
+           v.nombre_panaderia, v.nombre AS vend_nombre
+    FROM   solicitudes_admin sa
+    JOIN   usuarios t ON t.id = sa.trabajador_id
+    JOIN   usuarios v ON v.id = sa.vendedor_id
+    ORDER  BY sa.estado ASC, sa.created_at DESC
+")->fetchAll();
+$pendientes_count = count(array_filter($solicitudes_admin, fn($s) => $s['estado'] === 'pendiente'));
 
 // Sucursales agrupadas por vendedor
 $sucursales_por_vendedor = [];
@@ -1092,6 +1133,8 @@ foreach ($vendedores as $v) {
       }
 
     });
+
+    
   </script>
 </body>
 
