@@ -12,7 +12,6 @@ define('SITE_URL',  'http://localhost:8012/panaderia');
 define('UPLOAD_DIR', __DIR__ . '/uploads/');
 define('UPLOAD_URL', SITE_URL . '/uploads/');
 
-// ── Conexión PDO ──────────────────────────────────────────────────────────
 function db(): PDO {
     static $pdo = null;
     if ($pdo !== null) return $pdo;
@@ -26,21 +25,16 @@ function db(): PDO {
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $opts);
     } catch (PDOException $e) {
-        die('<div style="font-family:sans-serif;padding:40px;color:#c00">
-             <h2>Error de conexión a la base de datos</h2>
-             <p>' . htmlspecialchars($e->getMessage()) . '</p>
-             <p>Verificá que XAMPP esté corriendo y que la base de datos <b>panaderia_db</b> exista.</p>
-             </div>');
+        // TEMPORAL - para ver el error exacto:
+        die('<pre style="color:red;padding:20px">ERROR DE BD: ' . $e->getMessage() . '</pre>');
     }
     return $pdo;
 }
 
-// ── Sesión ────────────────────────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// ── Usuario logueado ──────────────────────────────────────────────────────
 function usuario_actual(): ?array {
     if (!isset($_SESSION['user_id'])) return null;
     $stmt = db()->prepare('SELECT * FROM usuarios WHERE id = ?');

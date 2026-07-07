@@ -198,6 +198,22 @@ if (!empty($_GET['edit'])) {
 
 $medios_actuales = array_filter(explode(',', $u['medios_pago'] ?? 'efectivo'));
 $tiene_transf    = in_array('transferencia', $medios_actuales);
+
+// ── Trabajadores de esta panadería ────────────────────────────────────────
+$trabajadores = db()->query("
+    SELECT id, nombre, email, identificador, documento_id, avatar_url, created_at
+    FROM usuarios
+    WHERE tipo = 'trabajador' AND panaderia_id = $uid
+    ORDER BY nombre
+")->fetchAll();
+
+// ── Sucursales de esta panadería ──────────────────────────────────────────
+$mis_sucursales = [];
+try {
+    $suc_stmt = db()->prepare("SELECT * FROM sucursales WHERE vendedor_id = ? ORDER BY nombre");
+    $suc_stmt->execute([$uid]);
+    $mis_sucursales = $suc_stmt->fetchAll();
+} catch (Exception $e) { /* tabla aún no existe */ }
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -235,6 +251,8 @@ $tiene_transf    = in_array('transferencia', $medios_actuales);
         <?php endif; ?>
       </a>
     </li>
+    <li><a href="vendedor.php?sec=trabajadores" class="<?= $seccion==='trabajadores' ?'on':'' ?>"><span class="nav-ico">👥</span> Trabajadores</a></li>
+    <li><a href="vendedor.php?sec=sucursales"   class="<?= $seccion==='sucursales'   ?'on':'' ?>"><span class="nav-ico">🏬</span> Sucursales</a></li>
     <li><a href="vendedor.php?sec=perfil" class="<?= $seccion==='perfil' ?'on':'' ?>"><span class="nav-ico">⚙️</span> Mi Perfil</a></li>
     <li>
       <a href="vendedor.php?sec=documentos" class="<?= $seccion==='documentos'?'on':'' ?>">
@@ -264,12 +282,14 @@ $tiene_transf    = in_array('transferencia', $medios_actuales);
         <h1>
           <?php
           $titulos = [
-            'inicio'    => 'Mi Panel',
-            'productos' => 'Mis Productos',
-            'add'       => ($edit_prod ? 'Editar Producto' : 'Agregar Producto'),
-            'pedidos'   => 'Pedidos recibidos',
-            'perfil'      => 'Mi Perfil',
-            'documentos'  => '📂 Mis Documentos',
+            'inicio'       => 'Mi Panel',
+            'productos'    => 'Mis Productos',
+            'add'          => ($edit_prod ? 'Editar Producto' : 'Agregar Producto'),
+            'pedidos'      => 'Pedidos recibidos',
+            'perfil'       => 'Mi Perfil',
+            'documentos'   => '📂 Mis Documentos',
+            'trabajadores' => '👥 Mis Trabajadores',
+            'sucursales'   => '🏬 Mis Sucursales',
           ];
           echo $titulos[$seccion] ?? 'Mi Panel';
           ?>
