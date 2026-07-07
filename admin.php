@@ -387,11 +387,13 @@ foreach ($vendedores as $v) {
       position: fixed;
       inset: 0;
       background: rgba(0, 0, 0, .5);
-      z-index: 500;
+      z-index: 1000;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
+      opacity: 1 !important;
+      pointer-events: all !important;
     }
 
     .modal-box {
