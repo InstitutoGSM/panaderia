@@ -524,6 +524,14 @@ foreach ($vendedores as $v) {
           </span>
         <?php endif; ?>
       </button>
+      <button class="admin-tab" onclick="cambiarTab('tab-solicitudes-admin', this)">
+        👑 Solicitudes Admin
+        <?php if ($pendientes_count > 0): ?>
+          <span style="background:#C8601A;color:white;border-radius:50px;padding:1px 8px;font-size:0.72rem;margin-left:4px">
+            <?= $pendientes_count ?>
+          </span>
+        <?php endif; ?>
+      </button>
     </div>
 
     <!-- ════════════════════════════════════════════════════════════════════ -->
@@ -765,6 +773,65 @@ foreach ($vendedores as $v) {
           </div>
         <?php endforeach; ?>
       </div>
+    </div>
+
+    <div id="tab-solicitudes-admin" class="tab-panel">
+      <h3 style="margin-bottom:18px">👑 Solicitudes de Admin de Panadería</h3>
+      <?php if (empty($solicitudes_admin)): ?>
+        <p style="color:var(--gris);text-align:center;padding:40px">No hay solicitudes aún.</p>
+      <?php else: ?>
+        <div style="display:grid;gap:14px">
+          <?php foreach ($solicitudes_admin as $s): ?>
+            <?php
+            $bc = match ($s['estado']) {
+              'pendiente' => 'background:#FFF8E1;color:#F57F17',
+              'aprobado'  => 'background:#E8F5E9;color:#2E7D32',
+              'rechazado' => 'background:#FFEBEE;color:#C62828',
+            };
+            $bt = match ($s['estado']) {
+              'pendiente' => '⏳ Pendiente',
+              'aprobado'  => '✅ Aprobado',
+              'rechazado' => '❌ Rechazado',
+            };
+            ?>
+            <div style="background:var(--blanco);border-radius:var(--radio-lg);box-shadow:var(--sombra);
+                        padding:18px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+              <div style="flex:1;min-width:200px">
+                <p style="font-weight:700;font-size:1rem;margin:0 0 3px">
+                  <?= h($s['trab_nombre']) ?>
+                  <span style="font-size:0.8rem;color:var(--gris);font-weight:400">
+                    · <?= h($s['trab_email']) ?>
+                    <?= $s['documento_id'] ? ' · DNI: ' . h($s['documento_id']) : '' ?>
+                  </span>
+                </p>
+                <p style="color:var(--gris);font-size:0.83rem;margin:0">
+                  Panadería: <strong><?= h($s['nombre_panaderia'] ?: $s['vend_nombre']) ?></strong>
+                </p>
+                <p style="font-size:0.76rem;color:var(--gris);margin:4px 0 0">
+                  Solicitado: <?= date('d/m/Y H:i', strtotime($s['created_at'])) ?>
+                </p>
+              </div>
+              <span style="padding:5px 14px;border-radius:50px;font-size:0.78rem;font-weight:700;<?= $bc ?>">
+                <?= $bt ?>
+              </span>
+              <?php if ($s['estado'] === 'pendiente'): ?>
+                <div style="display:flex;gap:8px">
+                  <button onclick="resolverAdmin(<?= $s['id'] ?>, 'aprobar_admin_pan')"
+                    style="padding:8px 16px;background:#E8F5E9;color:#2E7D32;
+                                 border:none;border-radius:50px;font-weight:700;cursor:pointer">
+                    ✅ Aprobar
+                  </button>
+                  <button onclick="resolverAdmin(<?= $s['id'] ?>, 'rechazar_admin_pan')"
+                    style="padding:8px 16px;background:#FFEBEE;color:#C62828;
+                                 border:none;border-radius:50px;font-weight:700;cursor:pointer">
+                    ❌ Rechazar
+                  </button>
+                </div>
+              <?php endif; ?>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
     </div>
 
   </div>
@@ -1134,7 +1201,22 @@ foreach ($vendedores as $v) {
 
     });
 
-    
+    function resolverAdmin(solId, accion) {
+      const msg = accion === 'aprobar_admin_pan' ? '¿Aprobar este trabajador como admin de la panadería?' : '¿Rechazar esta solicitud?';
+      if (!confirm(msg)) return;
+      fetch('admin.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: `accion=${accion}&sol_id=${solId}`
+        })
+        .then(r => r.json())
+        .then(d => {
+          toast(d.msg, d.ok ? 'ok' : 'err');
+          if (d.ok) setTimeout(() => location.reload(), 1200);
+        });
+    }
   </script>
 </body>
 
