@@ -154,12 +154,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if (!empty($_FILES['avatar']['name'])) $avatar_t = subir_imagen($_FILES['avatar'], 'avatar');
       try {
         db()->prepare("
-                    INSERT INTO usuarios (nombre, identificador, documento_id, email, password, tipo, panaderia_id, avatar_url, estado_verificacion)
+                    INSERT INTO usuarios (nombre, identificador, documento_id, email, password_hash, tipo, panaderia_id, avatar_url, estado_verificacion)
                     VALUES (?,?,?,?,?, 'trabajador', ?,?, 'aprobado')
                 ")->execute([$nombre, $ident_t, $documento, $email_t, password_hash($pass_t, PASSWORD_DEFAULT), $uid, $avatar_t]);
         $msg_ok = '¡Trabajador ' . $nombre . ' creado! ✅';
       } catch (Exception $e) {
-        $msg_err = 'El identificador o email ya está en uso.';
+        $msg = $e->getMessage();
+        if (str_contains($msg, 'email') || str_contains($msg, 'Duplicate') && str_contains($msg, 'email')) {
+          $msg_err = 'Ese email ya está registrado en el sistema (puede ser una cuenta compradora). Usá otro.';
+        } elseif (str_contains($msg, 'identificador')) {
+          $msg_err = 'Ese @identificador ya lo usa otra cuenta. Elegí uno diferente.';
+        } else {
+          $msg_err = 'Error al crear trabajador. Detalle: ' . $e->getMessage();
+        }
       }
       $seccion = 'trabajadores';
     }
@@ -952,6 +959,12 @@ try {
                 <button class="btn btn-naranja" type="submit">✅ Crear trabajador</button>
                 <button class="btn btn-ghost" type="button" onclick="document.getElementById('modal-crear-trab').style.display='none'">Cancelar</button>
               </div>
+              <?php if ($msg_err && isset($_POST['accion']) && $_POST['accion'] === 'crear_trabajador'): ?>
+                <div style="background:#FFEBEE;border-left:4px solid #e53935;padding:10px 14px;
+              border-radius:8px;margin-bottom:12px;color:#c62828;font-size:0.85rem;font-weight:600">
+                  ⚠️ <?= h($msg_err) ?>
+                </div>
+              <?php endif; ?>
             </form>
           </div>
         </div>
